@@ -1,20 +1,16 @@
 package org.example;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.text.DecimalFormat;
-import java.sql.Date;
 import java.util.Scanner;
 
 public class CafeManagementSystem {
 
-    public static final String INSERT_DRINK ="INSERT INTO drinks(name_eng, name_ukr, price)VALUES (?, ?, ?)";
-    public static final String INSERT_DESSERT ="INSERT INTO desserts(name_eng, name_ukr, price)VALUES (?, ?, ?)";
-    public static final String INSERT_BARISTA ="INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 1)";
-    public static final String INSERT_CONFECTIONER ="INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 3)";
-    public static final String INSERT_CUSTOMER ="INSERT INTO customers(full_name, date_of_birth, phone, email, discount)VALUES (?, ?, ?, ?, ?)";
+    public static final String INSERT_DRINK = "INSERT INTO drinks(name_eng, name_ukr, price)VALUES (?, ?, ?)";
+    public static final String INSERT_DESSERT = "INSERT INTO desserts(name_eng, name_ukr, price)VALUES (?, ?, ?)";
+    public static final String INSERT_BARISTA = "INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 1)";
+    public static final String INSERT_CONFECTIONER = "INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 3)";
+    public static final String INSERT_CUSTOMER = "INSERT INTO customers(full_name, date_of_birth, phone, email, discount)VALUES (?, ?, ?, ?, ?)";
     public static final String UPDATE_DRINK_PRICE = "UPDATE drinks SET price = ? WHERE name_eng = ?";
     public static final String UPDATE_CONFECTIONER_CONTACTS = "UPDATE staff SET email = ? WHERE position_id = 3 AND full_name = ?";
     public static final String UPDATE_BARISTA_PHONE = "UPDATE staff SET phone = ? WHERE position_id = 1 AND full_name = ?";
@@ -22,12 +18,16 @@ public class CafeManagementSystem {
     public static final String DELETE_DESSERT = "DELETE FROM desserts WHERE name_eng = ?";
     public static final String DEACTIVATE_WAITER = "UPDATE staff SET is_active = false, description = ? WHERE position_id = 2 AND full_name = ?";
     public static final String DEACTIVATE_BARISTA = "UPDATE staff SET is_active = false, description = ? WHERE position_id = 1 AND full_name = ?";
-
     public static final String DELETE_CUSTOMER = "DELETE FROM customers WHERE full_name = ?";
+    public static final String SELECT_ALL_DRINKS = "SELECT * FROM drinks";
+    public static final String SELECT_ALL_DESSERTS = "SELECT * FROM desserts";
+    public static final String SELECT_ALL_BARISTAS = "SELECT * FROM staff WHERE position_id = 1";
+    public static final String SELECT_ALL_WAITERS = "SELECT * FROM staff WHERE position_id = 2";
+
     public static void main(String[] args) {
         try (Connection connection = DriverManager.getConnection(
                 "jdbc:postgresql://localhost:5440/coffee_house",
-                "sa", "admin")){
+                "sa", "admin")) {
 
             Scanner scanner = new Scanner(System.in);
 
@@ -46,6 +46,10 @@ public class CafeManagementSystem {
                 System.out.println("11. Деактивировать официанта по причине увольнения.");
                 System.out.println("12. Деактивировать бариста по причине увольнения.");
                 System.out.println("13. Удалить информацию о клиенте.");
+                System.out.println("14. Показать все напитки");
+                System.out.println("15. Показать все десерты");
+                System.out.println("16. Показать всех бариста");
+                System.out.println("17. Показать всех официантов");
                 System.out.println("0. Выход");
 
                 int choice = scanner.nextInt();
@@ -90,6 +94,18 @@ public class CafeManagementSystem {
                     case 13:
                         deleteCustomer(connection, scanner);
                         break;
+                    case 14:
+                        showAllDrinks(connection);
+                        break;
+                    case 15:
+                        showAllDesserts(connection);
+                        break;
+                    case 16:
+                        showAllBaristas(connection);
+                        break;
+                    case 17:
+                        showAllWaiters(connection);
+                        break;
                     case 0:
                         System.out.println("Программа завершена.");
                         System.exit(0);
@@ -120,7 +136,7 @@ public class CafeManagementSystem {
         }
     }
 
-    private static void  addNewDessert(Connection connection, Scanner scanner) throws SQLException {
+    private static void addNewDessert(Connection connection, Scanner scanner) throws SQLException {
         System.out.println("Введите название нового десерта English:");
         String name_eng = scanner.next();
         System.out.println("Введите название нового десерта Украинский:");
@@ -159,7 +175,7 @@ public class CafeManagementSystem {
 
     }
 
-    private static void  addNewConfectioner(Connection connection, Scanner scanner) throws SQLException {
+    private static void addNewConfectioner(Connection connection, Scanner scanner) throws SQLException {
         scanner.nextLine();
         System.out.println("Введите ФИО нового Кондитера:");
         String full_name = scanner.nextLine();
@@ -351,4 +367,64 @@ public class CafeManagementSystem {
         }
     }
 
+    private static void showAllDrinks(Connection connection) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_DRINKS)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String nameEng = resultSet.getString("name_eng");
+                String nameUkr = resultSet.getString("name_ukr");
+                double price = resultSet.getDouble("price");
+
+                System.out.println("ID: " + id + ", Name (English): " + nameEng + ", Name (Ukrainian): " + nameUkr + ", Price: " + price);
+            }
+        }
+    }
+
+    private static void showAllDesserts(Connection connection) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_DESSERTS)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String nameEng = resultSet.getString("name_eng");
+                String nameUkr = resultSet.getString("name_ukr");
+                double price = resultSet.getDouble("price");
+
+                System.out.println("ID: " + id + ", Name (English): " + nameEng + ", Name (Ukrainian): " + nameUkr + ", Price: " + price);
+            }
+        }
+    }
+
+    private static void showAllBaristas(Connection connection) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_BARISTAS)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String fullName = resultSet.getString("full_name");
+                String phone = resultSet.getString("phone");
+                String email = resultSet.getString("email");
+                Boolean is_active = resultSet.getBoolean("is_active");
+                String description = resultSet.getString("description");
+
+                System.out.println("ID: " + id + ", Full Name: " + fullName + ", Phone: " + phone + ", Email: " + email + ", Is_Active: " + is_active + ", Description: " + description);
+            }
+        }
+    }
+
+    private static void showAllWaiters(Connection connection) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_WAITERS)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String fullName = resultSet.getString("full_name");
+                String phone = resultSet.getString("phone");
+                String email = resultSet.getString("email");
+                Boolean is_active = resultSet.getBoolean("is_active");
+                String description = resultSet.getString("description");
+
+                System.out.println("ID: " + id + ", Full Name: " + fullName + ", Phone: " + phone + ", Email: " + email + ", Is_Active: " + is_active + ", Description: " + description);
+            }
+        }
+
+    }
 }
