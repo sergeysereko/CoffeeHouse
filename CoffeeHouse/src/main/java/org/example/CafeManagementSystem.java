@@ -19,7 +19,11 @@ public class CafeManagementSystem {
     public static final String UPDATE_CONFECTIONER_CONTACTS = "UPDATE staff SET email = ? WHERE position_id = 3 AND full_name = ?";
     public static final String UPDATE_BARISTA_PHONE = "UPDATE staff SET phone = ? WHERE position_id = 1 AND full_name = ?";
     public static final String UPDATE_CUSTOMER_DISCOUNT = "UPDATE customers SET discount = ? WHERE full_name = ?";
+    public static final String DELETE_DESSERT = "DELETE FROM desserts WHERE name_eng = ?";
+    public static final String DEACTIVATE_WAITER = "UPDATE staff SET is_active = false, description = ? WHERE position_id = 2 AND full_name = ?";
+    public static final String DEACTIVATE_BARISTA = "UPDATE staff SET is_active = false, description = ? WHERE position_id = 1 AND full_name = ?";
 
+    public static final String DELETE_CUSTOMER = "DELETE FROM customers WHERE full_name = ?";
     public static void main(String[] args) {
         try (Connection connection = DriverManager.getConnection(
                 "jdbc:postgresql://localhost:5440/coffee_house",
@@ -38,6 +42,10 @@ public class CafeManagementSystem {
                 System.out.println("7. Изменить почтовый адрес кондитеру");
                 System.out.println("8. Изменить контактный телефон бариста");
                 System.out.println("9. Изменить процент скидки клиента.");
+                System.out.println("10. Удалить информацию о десерте.");
+                System.out.println("11. Деактивировать официанта по причине увольнения.");
+                System.out.println("12. Деактивировать бариста по причине увольнения.");
+                System.out.println("13. Удалить информацию о клиенте.");
                 System.out.println("0. Выход");
 
                 int choice = scanner.nextInt();
@@ -69,6 +77,18 @@ public class CafeManagementSystem {
                         break;
                     case 9:
                         updateCustomerDiscount(connection, scanner);
+                        break;
+                    case 10:
+                        deleteDessert(connection, scanner);
+                        break;
+                    case 11:
+                        deactivateWaiter(connection, scanner);
+                        break;
+                    case 12:
+                        deactivateBarista(connection, scanner);
+                        break;
+                    case 13:
+                        deleteCustomer(connection, scanner);
                         break;
                     case 0:
                         System.out.println("Программа завершена.");
@@ -246,6 +266,88 @@ public class CafeManagementSystem {
             preparedStatement.setString(2, full_name);
             preparedStatement.executeUpdate();
             System.out.println("Процент скидки клиента успешно изменен!");
+        }
+    }
+
+
+    private static void deleteDessert(Connection connection, Scanner scanner) throws SQLException {
+        System.out.println("Введите название десерта для удаления:");
+        String name_eng = scanner.next();
+
+
+        String deleteOrderItems = "DELETE FROM orderitems WHERE dessert_id IN (SELECT id FROM desserts WHERE name_eng = ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(deleteOrderItems)) {
+            preparedStatement.setString(1, name_eng);
+            preparedStatement.executeUpdate();
+        }
+
+
+        String query = DELETE_DESSERT;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, name_eng);
+            preparedStatement.executeUpdate();
+            System.out.println("Информация о десерте успешно удалена!");
+        }
+    }
+
+    private static void deactivateWaiter(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО официанта для увольнения:");
+        String full_name = scanner.nextLine();
+        System.out.println("Введите причину увольнения:");
+        String reason = scanner.nextLine();
+
+        String query = DEACTIVATE_WAITER;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, reason);
+            preparedStatement.setString(2, full_name);
+            preparedStatement.executeUpdate();
+            System.out.println("Информация об официанте успешно удалена!");
+        }
+    }
+
+    private static void deactivateBarista(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО бариста для увольнения:");
+        String full_name = scanner.nextLine();
+        System.out.println("Введите причину увольнения:");
+        String reason = scanner.nextLine();
+
+        String query = DEACTIVATE_BARISTA;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, reason);
+            preparedStatement.setString(2, full_name);
+            preparedStatement.executeUpdate();
+            System.out.println("Информация о баристе успешно удалена!");
+        }
+    }
+
+
+    private static void deleteCustomer(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО клиента для удаления:");
+        String customerFullName = scanner.nextLine();
+
+        //  удаляем все связанные записи в таблице orderitems
+        String deleteOrderItems = "DELETE FROM orderitems WHERE order_id IN (SELECT id FROM orders WHERE customer_id IN (SELECT id FROM customers WHERE full_name = ?))";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(deleteOrderItems)) {
+            preparedStatement.setString(1, customerFullName);
+            preparedStatement.executeUpdate();
+        }
+
+        //  удаляем все связанные заказы
+        String deleteOrders = "DELETE FROM orders WHERE customer_id IN (SELECT id FROM customers WHERE full_name = ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(deleteOrders)) {
+            preparedStatement.setString(1, customerFullName);
+            preparedStatement.executeUpdate();
+        }
+
+
+        String query = DELETE_CUSTOMER;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, customerFullName);
+            preparedStatement.executeUpdate();
+            System.out.println("Информация о клиенте успешно удалена!");
         }
     }
 
