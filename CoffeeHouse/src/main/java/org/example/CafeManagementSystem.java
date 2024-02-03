@@ -2,6 +2,7 @@ package org.example;
 
 import java.sql.*;
 import java.text.DecimalFormat;
+import java.time.LocalTime;
 import java.util.Scanner;
 
 public class CafeManagementSystem {
@@ -23,6 +24,12 @@ public class CafeManagementSystem {
     public static final String SELECT_ALL_DESSERTS = "SELECT * FROM desserts";
     public static final String SELECT_ALL_BARISTAS = "SELECT * FROM staff WHERE position_id = 1";
     public static final String SELECT_ALL_WAITERS = "SELECT * FROM staff WHERE position_id = 2";
+
+    public static final String INSERT_ORDER = "INSERT INTO Orders (customer_id, order_date, total_amount) VALUES (?, ?, ?)";
+    public static final String INSERT_ORDER_ITEM = "INSERT INTO OrderItems (order_id, drink_id, dessert_id, quantity, drink_price, dessert_price) VALUES (?, ?, ?, ?, ?, ?)";
+    public static final String INSERT_SCHEDULE = "INSERT INTO Schedule (staff_id, day_of_week, start_time, end_time) VALUES (?, 'Monday', ?, ?)";
+
+
 
     public static void main(String[] args) {
         try (Connection connection = DriverManager.getConnection(
@@ -50,6 +57,8 @@ public class CafeManagementSystem {
                 System.out.println("15. Показать все десерты");
                 System.out.println("16. Показать всех бариста");
                 System.out.println("17. Показать всех официантов");
+                System.out.println("18. Добавить новый заказ");
+                System.out.println("19. Добавление графика работы для понедельника.");
                 System.out.println("0. Выход");
 
                 int choice = scanner.nextInt();
@@ -105,6 +114,12 @@ public class CafeManagementSystem {
                         break;
                     case 17:
                         showAllWaiters(connection);
+                        break;
+                    case 18:
+                        addNewOrder(connection, scanner);
+                        break;
+                    case 19:
+                        addNewSchedule(connection, scanner);
                         break;
                     case 0:
                         System.out.println("Программа завершена.");
@@ -425,6 +440,120 @@ public class CafeManagementSystem {
                 System.out.println("ID: " + id + ", Full Name: " + fullName + ", Phone: " + phone + ", Email: " + email + ", Is_Active: " + is_active + ", Description: " + description);
             }
         }
-
     }
+
+    private static void addNewOrder(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО клиента:");
+        String customerFullName = scanner.nextLine();
+
+        // Ищем ID клиента по его ФИО
+        int customerId = findCustomerIdByFullName(connection, customerFullName);
+
+        if (customerId == -1) {
+//            System.out.println("Клиент с таким ФИО не найден.");
+            return;
+        }
+
+        System.out.println("Введите дату заказа (в формате ГГГГ-ММ-ДД):");
+        String orderDate = scanner.next();
+        System.out.println("Введите общую сумму заказа:");
+        double totalAmount = scanner.nextDouble();
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT_ORDER, Statement.RETURN_GENERATED_KEYS)) {
+            preparedStatement.setInt(1, customerId);
+            preparedStatement.setDate(2, Date.valueOf(orderDate));
+            preparedStatement.setDouble(3, totalAmount);
+            preparedStatement.executeUpdate();
+
+            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                int orderId = generatedKeys.getInt(1);
+                addNewOrderItem(connection, orderId, scanner);
+            }
+        }
+    }
+
+    // Метод для поиска ID клиента по его ФИО
+    private static int findCustomerIdByFullName(Connection connection, String customerFullName) throws SQLException {
+        String query = "SELECT id FROM Customers WHERE full_name = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, customerFullName);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("id");
+                } else {
+                    return -1; // Клиент с таким ФИО не найден
+                }
+            }
+        }
+    }
+        private static void addNewOrderItem(Connection connection, int orderId, Scanner scanner) throws SQLException {
+            System.out.println("Введите ID напитка:");
+            int drinkId = scanner.nextInt();
+            System.out.println("Введите ID десерта:");
+            int dessertId = scanner.nextInt();
+            System.out.println("Введите количество:");
+            int quantity = scanner.nextInt();
+            System.out.println("Введите стоимость напитка:");
+            double drinkPrice = scanner.nextDouble();
+            System.out.println("Введите стоимость десерта:");
+            double dessertPrice = scanner.nextDouble();
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT_ORDER_ITEM)) {
+                preparedStatement.setInt(1, orderId);
+                preparedStatement.setInt(2, drinkId);
+                preparedStatement.setInt(3, dessertId);
+                preparedStatement.setInt(4, quantity);
+                preparedStatement.setDouble(5, drinkPrice);
+                preparedStatement.setDouble(6, dessertPrice);
+                preparedStatement.executeUpdate();
+                System.out.println("Информация о заказе успешно добавлена!");
+            }
+        }
+
+    private static void addNewSchedule(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО сотрудника:");
+        String fullName = scanner.nextLine();
+        int staffId = findStaffIdByFullName(connection, fullName);
+
+        if (staffId == -1) {
+            System.out.println("Сотрудник с таким ФИО не найден.");
+            return;
+        }
+
+
+        System.out.println("Введите время начала работы (в формате HH:mm):");
+        String startTimeStr = scanner.next();
+        System.out.println("Введите время окончания работы (в формате HH:mm):");
+        String endTimeStr = scanner.next();
+
+        LocalTime startTime = LocalTime.parse(startTimeStr);
+        LocalTime endTime = LocalTime.parse(endTimeStr);
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT_SCHEDULE)) {
+            preparedStatement.setInt(1, staffId);
+            preparedStatement.setTime(2, Time.valueOf(startTime));
+            preparedStatement.setTime(3, Time.valueOf(endTime));
+            preparedStatement.executeUpdate();
+            System.out.println("Информация о графике работы успешно добавлена!");
+        }
+    }
+
+    // Метод для поиска ID сотрудника по его ФИО
+    private static int findStaffIdByFullName(Connection connection, String fullName) throws SQLException {
+        String query = "SELECT id FROM Staff WHERE full_name = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, fullName);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("id");
+                } else {
+                    return -1; // Сотрудник не найден
+                }
+            }
+        }
+    }
+
 }
