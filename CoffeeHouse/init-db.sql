@@ -28,6 +28,8 @@ CREATE TABLE Staff (
     phone VARCHAR(255),
     email VARCHAR(255),
     position_id INT,
+    is_active BOOLEAN,
+    description VARCHAR(255),
     FOREIGN KEY (position_id) REFERENCES Positions(id),
 	primary key (id)
 );
@@ -85,9 +87,9 @@ insert into desserts(name_eng,name_ukr,price)values('donut','донат','50'),
 
 insert into positions(position_name)values('barista'),('waiter'),('confectioner');
 
-insert into staff(full_name,phone,email,position_id)values('Романичев Владимир','+380934567812','romanichev@gmail.com',3),
-('Горбунов Игорь','+380671234578','gorbunov@gmail.com',1),
-('Лайтарук Сергей','+380957892356','laytaruk@gmail.com',2);
+insert into staff(full_name,phone,email,position_id,is_active)values('Романичев Владимир','+380934567812','romanichev@gmail.com',3,true),
+('Горбунов Игорь','+380671234578','gorbunov@gmail.com',1,true),
+('Лайтарук Сергей','+380957892356','laytaruk@gmail.com',2,true);
 
 insert into customers(full_name,date_of_birth,phone,email,discount)values('Иванов Иван','01-02-1988','+380671597548','Ivan@gmail.com',5),
 ('Петров Петр','02-03-2000','+380957531248','Petrov@gmail.com',7),

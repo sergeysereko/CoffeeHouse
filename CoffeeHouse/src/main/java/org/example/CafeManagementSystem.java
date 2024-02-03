@@ -10,11 +10,15 @@ import java.util.Scanner;
 
 public class CafeManagementSystem {
 
-    public static final String INSERTDRINK ="INSERT INTO drinks(name_eng, name_ukr, price)VALUES (?, ?, ?)";
-    public static final String INSERTDESSERT ="INSERT INTO desserts(name_eng, name_ukr, price)VALUES (?, ?, ?)";
-    public static final String INSERTBARISTA ="INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 1)";
-    public static final String INSERTCONFECTIONER ="INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 3)";
-    public static final String INSERTCUSTOMER ="INSERT INTO customers(full_name, date_of_birth, phone, email, discount)VALUES (?, ?, ?, ?, ?)";
+    public static final String INSERT_DRINK ="INSERT INTO drinks(name_eng, name_ukr, price)VALUES (?, ?, ?)";
+    public static final String INSERT_DESSERT ="INSERT INTO desserts(name_eng, name_ukr, price)VALUES (?, ?, ?)";
+    public static final String INSERT_BARISTA ="INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 1)";
+    public static final String INSERT_CONFECTIONER ="INSERT INTO staff(full_name, phone, email, position_id)VALUES (?, ?, ?, 3)";
+    public static final String INSERT_CUSTOMER ="INSERT INTO customers(full_name, date_of_birth, phone, email, discount)VALUES (?, ?, ?, ?, ?)";
+    public static final String UPDATE_DRINK_PRICE = "UPDATE drinks SET price = ? WHERE name_eng = ?";
+    public static final String UPDATE_CONFECTIONER_CONTACTS = "UPDATE staff SET email = ? WHERE position_id = 3 AND full_name = ?";
+    public static final String UPDATE_BARISTA_PHONE = "UPDATE staff SET phone = ? WHERE position_id = 1 AND full_name = ?";
+    public static final String UPDATE_CUSTOMER_DISCOUNT = "UPDATE customers SET discount = ? WHERE full_name = ?";
 
     public static void main(String[] args) {
         try (Connection connection = DriverManager.getConnection(
@@ -30,6 +34,10 @@ public class CafeManagementSystem {
                 System.out.println("3. Добавить нового бариста");
                 System.out.println("4. Добавить нового кондитера");
                 System.out.println("5. Добавить нового клиента");
+                System.out.println("6. Изменить цену на определенный вид кофе/напитка");
+                System.out.println("7. Изменить почтовый адрес кондитеру");
+                System.out.println("8. Изменить контактный телефон бариста");
+                System.out.println("9. Изменить процент скидки клиента.");
                 System.out.println("0. Выход");
 
                 int choice = scanner.nextInt();
@@ -49,6 +57,18 @@ public class CafeManagementSystem {
                         break;
                     case 5:
                         addNewCustomer(connection, scanner);
+                        break;
+                    case 6:
+                        updateDrinkPrice(connection, scanner);
+                        break;
+                    case 7:
+                        updateEmailConfectioner(connection, scanner);
+                        break;
+                    case 8:
+                        updateBaristaPhone(connection, scanner);
+                        break;
+                    case 9:
+                        updateCustomerDiscount(connection, scanner);
                         break;
                     case 0:
                         System.out.println("Программа завершена.");
@@ -70,7 +90,7 @@ public class CafeManagementSystem {
         System.out.println("Введите стоимость напитка:");
         double price = scanner.nextDouble();
 
-        String query = INSERTDRINK;
+        String query = INSERT_DRINK;
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, name_eng);
             preparedStatement.setString(2, name_ukr);
@@ -88,7 +108,7 @@ public class CafeManagementSystem {
         System.out.println("Введите стоимость десерта:");
         double price = scanner.nextDouble();
 
-        String query = INSERTDESSERT;
+        String query = INSERT_DESSERT;
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, name_eng);
             preparedStatement.setString(2, name_ukr);
@@ -108,7 +128,7 @@ public class CafeManagementSystem {
         System.out.println("Введите email сотрудника:");
         String email = scanner.next();
 
-        String query = INSERTBARISTA;
+        String query = INSERT_BARISTA;
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, full_name);
             preparedStatement.setString(2, phone);
@@ -128,7 +148,7 @@ public class CafeManagementSystem {
         System.out.println("Введите email сотрудника:");
         String email = scanner.next();
 
-        String query = INSERTCONFECTIONER;
+        String query = INSERT_CONFECTIONER;
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, full_name);
             preparedStatement.setString(2, phone);
@@ -153,7 +173,7 @@ public class CafeManagementSystem {
         System.out.println("Введите скидку клиента:");
         Double discount = scanner.nextDouble();
 
-        String query = INSERTCUSTOMER;
+        String query = INSERT_CUSTOMER;
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, full_name);
             preparedStatement.setDate(2, date_of_birth);
@@ -166,5 +186,67 @@ public class CafeManagementSystem {
 
     }
 
+    private static void updateDrinkPrice(Connection connection, Scanner scanner) throws SQLException {
+        System.out.println("Введите название напитка для изменения цены (English):");
+        String name_eng = scanner.next();
+        System.out.println("Введите новую цену для напитка:");
+        double newPrice = scanner.nextDouble();
+
+        String query = UPDATE_DRINK_PRICE;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setDouble(1, newPrice);
+            preparedStatement.setString(2, name_eng);
+            preparedStatement.executeUpdate();
+            System.out.println("Цена напитка успешно изменена!");
+        }
+    }
+
+    private static void updateEmailConfectioner(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО кондитера для изменения контактов:");
+        String full_name = scanner.nextLine();
+        System.out.println("Введите новый email кондитера:");
+        String newEmail = scanner.next();
+
+        String query = UPDATE_CONFECTIONER_CONTACTS;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, newEmail);
+            preparedStatement.setString(2, full_name);
+            preparedStatement.executeUpdate();
+            System.out.println("Контакты кондитера успешно изменены!");
+        }
+    }
+
+    private static void updateBaristaPhone(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО бариста для изменения контактного телефона:");
+        String full_name = scanner.nextLine();
+        System.out.println("Введите новый мобильный телефон бариста:");
+        String newPhone = scanner.next();
+
+        String query = UPDATE_BARISTA_PHONE;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, newPhone);
+            preparedStatement.setString(2, full_name);
+            preparedStatement.executeUpdate();
+            System.out.println("Контактный телефон бариста успешно изменен!");
+        }
+    }
+
+    private static void updateCustomerDiscount(Connection connection, Scanner scanner) throws SQLException {
+        scanner.nextLine();
+        System.out.println("Введите ФИО клиента для изменения процента скидки:");
+        String full_name = scanner.nextLine();
+        System.out.println("Введите новый процент скидки для клиента:");
+        double newDiscount = scanner.nextDouble();
+
+        String query = UPDATE_CUSTOMER_DISCOUNT;
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setDouble(1, newDiscount);
+            preparedStatement.setString(2, full_name);
+            preparedStatement.executeUpdate();
+            System.out.println("Процент скидки клиента успешно изменен!");
+        }
+    }
 
 }
